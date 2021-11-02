@@ -10,8 +10,6 @@ c = r.content
 
 soup = BeautifulSoup(c, "html.parser")
 
-#print (soup)
-
 main_content = soup.find('div', attrs = {'id': 'TableWithRules'})
 content = main_content.find('table').text
 print (content)
