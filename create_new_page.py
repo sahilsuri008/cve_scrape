@@ -39,19 +39,7 @@ def download_cve_info_cisco():
                 result_file_final = open ("results_cisco.txt","a")
                 for result_line in result_file:
                         fields = result_line.split("#")
-                        result_file_final.write("<tr><td>NX-OS "+os_version_cisco+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>")
-
-        subprocess.call("cp -rp results_cisco.txt myfile_cisco_update_use.txt", shell=True)
-        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' myfile_cisco_update_use.txt", shell=True)
-        f = open ("results_cisco.txt","r+")
-        final_content1 = f.read()
-        f.seek(0,0)
-        f.write("<table><tr><td>Nexus OS version</td><td>CVE No</td><td>CVE Desc</td><td>Resolution</td><td>Assigned Engineer</td><td>Status</td></tr>\n"+final_content1)
-        f.close
-
-        f1 = open ("results_cisco.txt","a")
-        f1.write("</table>")
-        f1.close()
+                        result_file_final.write("<tr><td>NX-OS "+os_version_cisco+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>\n")
 
 ################################################
 
@@ -80,18 +68,7 @@ def download_cve_info_f5():
                 result_file_final = open ("results_f5.txt","a")
                 for result_line in result_file:
                         fields = result_line.split("#")
-                        result_file_final.write("<tr><td>F5 Big IP OS "+os_version_f5+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>")
-
-        subprocess.call("cp -rp results_f5.txt myfile_f5_update_use.txt", shell=True)
-        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' myfile_f5_update_use.txt", shell=True)
-        f = open ("results_f5.txt","r+")
-        final_content1 = f.read()
-        f.seek(0,0)
-        f.write("<table><tr><td>F5 Big IP OS version</td><td>CVE No</td><td>CVE Desc</td><td>Resolution</td><td>Assigned Engineer</td><td>Status</td></tr>\n"+final_content1)
-
-        f2 = open ("results_f5.txt","r+")
-        f2.write("</table>")
-        f2.close()
+                        result_file_final.write("<tr><td>F5 Big IP OS "+os_version_f5+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>\n")
 
 #############################################
 
@@ -102,6 +79,9 @@ confluence = Confluence(
     password='Skyfall@007')
 
 #Cisco Confluence setup#
+
+cisco_open_pg_id=2457620
+cisco_resolved_pg_id=2457614
 
 def create_page_cisco():
 
@@ -115,7 +95,7 @@ def create_page_cisco():
             body=file_content)
 
 def download_page_open_cisco():
-        page_content = confluence.get_page_by_id(page_id=2457620,expand='body.storage').get('body').get('storage').get('value')
+        page_content = confluence.get_page_by_id(page_id=cisco_open_pg_id,expand='body.storage').get('body').get('storage').get('value')
         f = open("page_data_open_cisco","w")
         f.write(page_content)
         f.close()
@@ -123,18 +103,18 @@ def download_page_open_cisco():
 
 
 def download_page_resolved_cisco():
-        page_content = confluence.get_page_by_id(page_id=2457614,expand='body.storage').get('body').get('storage').get('value')
+        page_content = confluence.get_page_by_id(page_id=cisco_resolved_pg_id,expand='body.storage').get('body').get('storage').get('value')
         f = open("page_data_resolved_cisco","w")
         f.write(page_content)
         f.close()
-        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' page_data_resolved_cisco", shell=True)
+        subprocess.call("sed -i 's|</tr>|</tr>\n|g' page_data_resolved_cisco", shell=True)
 
 def update_page_open_cisco():
 
         file_to_read = open('page_data_open_cisco', "r")
         file_content = file_to_read.read()
         file_to_read.close()
-        status = confluence.update_page(page_id=2457620,title='Vulnerability_Report_for_CiscoNexus', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
+        status = confluence.update_page(page_id=cisco_open_pg_id,title='Vulnerability_Report_for_CiscoNexus', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
         print(status)
 
 
@@ -143,32 +123,57 @@ def update_page_resolved_cisco():
         file_to_read = open('page_data_resolved_cisco', "r")
         file_content = file_to_read.read()
         file_to_read.close()
-        status = confluence.update_page(page_id=2457614,title='resolved_cisco '+'vulnerabilities', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
+        status = confluence.update_page(page_id=cisco_resolved_pg_id,title='resolved_cisco '+'vulnerabilities', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
 
 ####################################################
 
 #F5 Confluence setup#
-def create_page_f5():
 
-        file_to_read = open('results_f5.txt', "r")
+f5_open_pg_id=2785285
+f5_resolved_pg_id=2785311
+
+
+def download_page_open_f5():
+        page_content = confluence.get_page_by_id(page_id=f5_open_pg_id,expand='body.storage').get('body').get('storage').get('value')
+        f = open("page_data_open_f5","w")
+        f.write(page_content)
+        f.close()
+        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' page_data_open_f5", shell=True)
+
+def download_page_resolved_f5():
+        page_content = confluence.get_page_by_id(page_id=f5_resolved_pg_id,expand='body.storage').get('body').get('storage').get('value')
+        f = open("page_data_resolved_f5","w")
+        f.write(page_content)
+        f.close()
+        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' page_data_resolved_f5", shell=True)
+
+def update_page_open_f5():
+
+        file_to_read = open('page_data_open_f5', "r")
         file_content = file_to_read.read()
         file_to_read.close()
+        status = confluence.update_page(page_id=f5_open_pg_id,title='Vulnerability_Report_for_f5', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
+        print(status)
 
-        status = confluence.create_page(
-            space="NI",
-            title='Vulnerability_Report_for_f5',
-            body=file_content)
+def update_page_resolved_f5():
+
+        file_to_read = open('page_data_resolved_f5', "r")
+        file_content = file_to_read.read()
+        file_to_read.close()
+        status = confluence.update_page(page_id=f5_resolved_pg_id,title='resolved_f5 '+'vulnerabilities', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
 
 ###################################################
 
 
 
 download_cve_info_cisco()
-#create_page_cisco()
 download_page_open_cisco()
 download_page_resolved_cisco()
+download_cve_info_f5()
+download_page_open_f5()
+download_page_resolved_f5()
 subprocess.run("./page_format.bash")
 update_page_open_cisco()
 update_page_resolved_cisco()
-download_cve_info_f5()
-create_page_f5()
+update_page_open_f5()
+update_page_resolved_f5()
