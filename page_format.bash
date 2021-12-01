@@ -76,3 +76,29 @@ sed -i '$e cat results_f5.txt' page_data_open_f5
 sed -i '$e cat resolved_page_f5.txt' page_data_resolved_f5
 
 rm -rf active_cve_f5.txt resolved_cve_f5.txt overall_cve_f5.txt unique_cve_f5.txt resolved_page_f5.txt
+
+#Separate active and resovled CVEs for fortinet#
+awk -F '<td>' '{print $3}' page_data_open_fortinet | tr -d '</td>' | grep CVE- >> active_cve_fortinet.txt
+awk -F '<td>' '{print $3}' page_data_resolved_fortinet | tr -d '</td>' | grep CVE- >> resolved_cve_fortinet.txt
+
+cat active_cve_fortinet.txt resolved_cve_fortinet.txt >> overall_cve_fortinet.txt
+sort -u overall_cve_fortinet.txt | grep "CVE-202" >> unique_cve_fortinet.txt
+
+#Remove CVEs already on the page#
+for vul in $(<unique_cve_fortinet.txt); do
+ sed -i "/$vul/d" results_fortinet.txt
+done
+
+#Remove resolved CVEs from open CVE report page#
+grep -i resolved page_data_open_fortinet >> resolved_page_fortinet.txt
+
+#Remove Resolved CVEs from Open CVE page#
+sed -i "/resolved/Id" page_data_open_fortinet
+
+## Input into page_data file##
+
+sed -i '$e cat results_fortinet.txt' page_data_open_fortinet
+sed -i '$e cat resolved_page_fortinet.txt' page_data_resolved_fortinet
+
+rm -rf active_cve_fortinet.txt resolved_cve_fortinet.txt overall_cve_fortinet.txt unique_cve_fortinet.txt resolved_page_fortinet.txt
+
