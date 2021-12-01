@@ -7,12 +7,13 @@ import subprocess
 from atlassian import Confluence
 
 #remove old output file#
-subprocess.call("rm -rf myfile.txt results_cisco.txt myfile_cisco.txt page_data_open page_data_resolved myfile_cisco_update_use.txt page_data_open_cisco page_data_resolved_cisco myfile_f5.txt  myfile_f5_update_use.txt  results_f5.txt", shell=True)
+subprocess.call("rm -rf myfile.txt results_cisco.txt myfile_cisco.txt page_data_open page_data_resolved myfile_cisco_update_use.txt page_data_open_cisco page_data_resolved_cisco myfile_f5.txt  myfile_f5_update_use.txt  results_f5.txt myfile_fortinet.txt results_fortinet.txt", shell=True)
 
 #Get OS versions for venodrs#
 os_versions = [ "12.3R12-S15", "20.2R3-S2" ]
 os_version_cisco_nexus = [ "7.3(5)D1(1)" ]
 os_versions_f5 = [ "14.1.4.1", "15.0.1" ]
+os_versions_fortinet = [ "6.4.5" ]
 
 #Create file for Cisco Nexus#
 def download_cve_info_cisco():
@@ -71,6 +72,35 @@ def download_cve_info_f5():
                         result_file_final.write("<tr><td>F5 Big IP OS "+os_version_f5+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>\n")
 
 #############################################
+
+##########Download CVE info for fortinet########
+def download_cve_info_fortinet():
+        for os_version_fortinet in os_versions_fortinet:
+                r = requests.get('http://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=FortiOS+{}'.format(os_version_fortinet))
+                c = r.content
+
+                soup = BeautifulSoup(c, "html.parser")
+
+                main_content = soup.find('div', attrs = {'id': 'TableWithRules'})
+                content = main_content.find('table').text
+                file1 = open("myfile_fortinet.txt", "a")
+                file1.write(content)
+                file1.close()
+
+                subprocess.call("sed -i '/^.*CVE/{N;s/\\n */# /}' myfile_fortinet.txt", shell=True)
+                subprocess.call("sed -i '/^.*Name/d' myfile_fortinet.txt", shell=True)
+                subprocess.call("sed -i '/^.*Description/d' myfile_fortinet.txt", shell=True)
+                subprocess.call("sed -i '/^$/d' myfile_fortinet.txt", shell=True)
+                subprocess.call("sed -i 's/<<<//g' myfile_fortinet.txt", shell=True)
+                subprocess.call("sed -i 's/<>//g' myfile_fortinet.txt", shell=True)
+
+                result_file = open ("myfile_fortinet.txt","r")
+                result_file_final = open ("results_fortinet.txt","a")
+                for result_line in result_file:
+                        fields = result_line.split("#")
+                        result_file_final.write("<tr><td>fortinet OS "+os_version_fortinet+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>\n")
+############################################
+
 
 
 confluence = Confluence(
@@ -164,6 +194,41 @@ def update_page_resolved_f5():
 
 ###################################################
 
+#fortinet Confluence setup#
+
+fortinet_open_pg_id=
+fortinet_resolved_pg_id=
+
+
+def download_page_open_fortinet():
+        page_content = confluence.get_page_by_id(page_id=fortinet_open_pg_id,expand='body.storage').get('body').get('storage').get('value')
+        f = open("page_data_open_fortinet","w")
+        f.write(page_content)
+        f.close()
+        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' page_data_open_fortinet", shell=True)
+
+def download_page_resolved_fortinet():
+        page_content = confluence.get_page_by_id(page_id=fortinet_resolved_pg_id,expand='body.storage').get('body').get('storage').get('value')
+        f = open("page_data_resolved_fortinet","w")
+        f.write(page_content)
+        f.close()
+        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' page_data_resolved_fortinet", shell=True)
+
+def update_page_open_fortinet():
+
+        file_to_read = open('page_data_open_fortinet', "r")
+        file_content = file_to_read.read()
+        file_to_read.close()
+        status = confluence.update_page(page_id=fortinet_open_pg_id,title='List_of_Vulnerability_Fortinet', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
+        print(status)
+
+def update_page_resolved_fortinet():
+
+        file_to_read = open('page_data_resolved_fortinet', "r")
+        file_content = file_to_read.read()
+        file_to_read.close()
+        status = confluence.update_page(page_id=fortinet_resolved_pg_id,title='List_of_Resolved_Vulnerabilities_Fortinet', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
+#############################
 
 
 download_cve_info_cisco()
