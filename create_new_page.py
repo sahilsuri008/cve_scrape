@@ -7,8 +7,7 @@ import subprocess
 from atlassian import Confluence
 
 #remove old output file#
-subprocess.call("rm -rf myfile.txt results_cisco.txt myfile_cisco.txt page_data_open page_data_resolved myfile_cisco_update_use.txt page_data_open_cisco page_data_resolved_cisco myfile_f5.txt  myfile_f5_update_use.txt  results_f5.txt myfile_fortinet.txt results_fortinet.txt", shell=True)
-
+subprocess.call("rm -rf myfile.txt results_cisco.txt myfile_cisco.txt page_data_open page_data_resolved myfile_cisco_update_use.txt page_data_open_cisco page_data_resolved_cisco myfile_f5.txt  myfile_f5_update_use.txt  results_f5.txt myfile_fortinet.txt results_fortinet.txt myfile_paloalto.txt results_paloalto.txt", shell=True)
 #Get OS versions for venodrs#
 os_versions = [ "12.3R12-S15", "20.2R3-S2" ]
 os_version_cisco_nexus = [ "7.3(5)D1(1)" ]
@@ -101,6 +100,33 @@ def download_cve_info_fortinet():
                         result_file_final.write("<tr><td>fortinet OS "+os_version_fortinet+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>\n")
 ############################################
 
+######CVE download setup for Palo Alto######
+def download_cve_info_paloalto():
+        for os_version_paloalto in os_versions_paloalto:
+                r = requests.get('http://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=PAN-OS+{}'.format(os_version_paloalto))
+                c = r.content
+
+                soup = BeautifulSoup(c, "html.parser")
+
+                main_content = soup.find('div', attrs = {'id': 'TableWithRules'})
+                content = main_content.find('table').text
+                file1 = open("myfile_paloalto.txt", "a")
+                file1.write(content)
+                file1.close()
+
+                subprocess.call("sed -i '/^.*CVE/{N;s/\\n */# /}' myfile_paloalto.txt", shell=True)
+                subprocess.call("sed -i '/^.*Name/d' myfile_paloalto.txt", shell=True)
+                subprocess.call("sed -i '/^.*Description/d' myfile_paloalto.txt", shell=True)
+                subprocess.call("sed -i '/^$/d' myfile_paloalto.txt", shell=True)
+                subprocess.call("sed -i 's/<<<//g' myfile_paloalto.txt", shell=True)
+                subprocess.call("sed -i 's/<>//g' myfile_paloalto.txt", shell=True)
+
+                result_file = open ("myfile_paloalto.txt","r")
+                result_file_final = open ("results_paloalto.txt","a")
+                for result_line in result_file:
+                        fields = result_line.split("#")
+                        result_file_final.write("<tr><td>PAN OS "+os_version_paloalto+"</td><td>"+fields[0]+"</td><td>"+fields[1].strip('\n')+"</td><td></td><td></td><td></td></tr>\n")
+##############################################
 
 
 confluence = Confluence(
@@ -229,6 +255,41 @@ def update_page_resolved_fortinet():
         file_to_read.close()
         status = confluence.update_page(page_id=fortinet_resolved_pg_id,title='List_of_Resolved_Vulnerabilities_Fortinet', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
 #############################
+
+#paloalto Confluence setup#
+
+paloalto_open_pg_id=
+paloalto_resolved_pg_id=
+
+
+def download_page_open_paloalto():
+        page_content = confluence.get_page_by_id(page_id=paloalto_open_pg_id,expand='body.storage').get('body').get('storage').get('value')
+        f = open("page_data_open_paloalto","w")
+        f.write(page_content)
+        f.close()
+        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' page_data_open_paloalto", shell=True)
+
+def download_page_resolved_paloalto():
+        page_content = confluence.get_page_by_id(page_id=paloalto_resolved_pg_id,expand='body.storage').get('body').get('storage').get('value')
+        f = open("page_data_resolved_paloalto","w")
+        f.write(page_content)
+        f.close()
+        subprocess.call("sed -i 's|</tr>|</tr>\\n|g' page_data_resolved_paloalto", shell=True)
+
+def update_page_open_paloalto():
+
+        file_to_read = open('page_data_open_paloalto', "r")
+        file_content = file_to_read.read()
+        file_to_read.close()
+        status = confluence.update_page(page_id=paloalto_open_pg_id,title='List_of_Vulnerabilities_paloalto', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
+        print(status)
+
+def update_page_resolved_paloalto():
+
+        file_to_read = open('page_data_resolved_paloalto', "r")
+        file_content = file_to_read.read()
+        file_to_read.close()
+        status = confluence.update_page(page_id=paloalto_resolved_pg_id,title='List_of_Resolved_Vulnerabilities_paloalto', body=file_content, parent_id=None, type='page', representation='storage', minor_edit=False)
 
 
 download_cve_info_cisco()
