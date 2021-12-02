@@ -102,3 +102,28 @@ sed -i '$e cat resolved_page_fortinet.txt' page_data_resolved_fortinet
 
 rm -rf active_cve_fortinet.txt resolved_cve_fortinet.txt overall_cve_fortinet.txt unique_cve_fortinet.txt resolved_page_fortinet.txt
 
+#Separate active and resovled CVEs for paloalto#
+awk -F '<td>' '{print $3}' page_data_open_paloalto | tr -d '</td>' | grep CVE- >> active_cve_paloalto.txt
+awk -F '<td>' '{print $3}' page_data_resolved_paloalto | tr -d '</td>' | grep CVE- >> resolved_cve_paloalto.txt
+
+cat active_cve_paloalto.txt resolved_cve_paloalto.txt >> overall_cve_paloalto.txt
+sort -u overall_cve_paloalto.txt >> unique_cve_paloalto.txt
+
+#Remove CVEs already on the page#
+for vul in $(<unique_cve_paloalto.txt); do
+ sed -i "/$vul/d" results_paloalto.txt
+done
+
+#Remove resolved CVEs from open CVE report page#
+grep -i resolved page_data_open_paloalto >> resolved_page_paloalto.txt
+
+#Remove Resolved CVEs from Open CVE page#
+sed -i "/resolved/Id" page_data_open_paloalto
+
+## Input into page_data file##
+
+sed -i '$e cat results_paloalto.txt' page_data_open_paloalto
+sed -i '$e cat resolved_page_paloalto.txt' page_data_resolved_paloalto
+
+rm -rf active_cve_paloalto.txt resolved_cve_paloalto.txt overall_cve_paloalto.txt unique_cve_paloalto.txt resolved_page_paloalto.txt
+
